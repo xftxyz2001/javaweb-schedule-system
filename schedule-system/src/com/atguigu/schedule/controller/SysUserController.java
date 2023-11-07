@@ -14,7 +14,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @WebServlet("/user/*")
 public class SysUserController  extends BaseContoller {
@@ -45,8 +48,6 @@ public class SysUserController  extends BaseContoller {
         }
         // 将result对象转换为JSON串响应给客户端
         WebUtil.writeJson(resp,result);
-
-
     }
 
     /**
@@ -58,26 +59,27 @@ public class SysUserController  extends BaseContoller {
      */
     protected void login(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //1 接收用户名和密码
-        String username = req.getParameter("username");
-        String userPwd = req.getParameter("userPwd");
+        SysUser sysUser = WebUtil.readJson(req, SysUser.class);
         //2 调用服务层方法,根据用户名查询用户信息
-        SysUser loginUser =userService.findByUsername(username);
+        SysUser loginUser =userService.findByUsername(sysUser.getUsername());
+
+        Result result =null;
+
         if(null == loginUser){
-            // 跳转到用户名有误提示页
-            resp.sendRedirect("/loginUsernameError.html");
-        }else if(! MD5Util.encrypt(userPwd).equals(loginUser.getUserPwd())){
-            //3 判断密码是否匹配
-            // 跳转到密码有误提示页
-            resp.sendRedirect("/loginUserPwdError.html");
+            result =Result.build(null,ResultCodeEnum.USERNAEM_ERROR);
+
+        } else if(! MD5Util.encrypt(sysUser.getUserPwd()).equals(loginUser.getUserPwd())){
+            result =Result.build(null,ResultCodeEnum.PASSWORD_ERROR);
         }else{
-            // 登录成功之后,将登录的用户信息放入session
-            HttpSession session = req.getSession();
-            session.setAttribute("sysUser",loginUser);
+            // 登录程序,将用户uid和username响应给客户端
+            Map data = new HashMap();
+            loginUser.setUserPwd("");
+            data.put("loginUser",loginUser);
 
-
-            //4 跳转到首页
-            resp.sendRedirect("/showSchedule.html");
+            result =Result.ok(data);
         }
+        // 3将登录结果响应给客户端
+        WebUtil.writeJson(resp,result);
 
     }
 
@@ -89,18 +91,17 @@ public class SysUserController  extends BaseContoller {
      * @throws IOException
      */
     protected void regist(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // 1 接收客户端提交的参数
-        String username = req.getParameter("username");
-        String userPwd = req.getParameter("userPwd");
+        // 1 接收客户端提交的json参数,并转换为User对象,获取信息
+        SysUser registUer = WebUtil.readJson(req, SysUser.class);
+
         // 2 调用服务层方法,完成注册功能
             //将参数放入一个SysUser对象中,在调用regist方法时传入
-        SysUser sysUser =new SysUser(null,username,userPwd);
-        int rows =userService.regist(sysUser);
+        int rows =userService.regist(registUer);
         // 3 根据注册结果(成功  失败) 做页面跳转
-        if(rows>0){
-            resp.sendRedirect("/registSuccess.html");
-        }else{
-            resp.sendRedirect("/registFail.html");
+        Result result = Result.ok(null);
+        if(rows <1){
+            result=Result.build(null,ResultCodeEnum.USERNAME_USED);
         }
+        WebUtil.writeJson(resp,result);
     }
 }

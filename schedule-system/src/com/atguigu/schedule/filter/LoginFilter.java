@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 //                          showSchedule.html
-@WebFilter(urlPatterns = {"/showSchedule.html","/schedule/*"})
+//@WebFilter(urlPatterns = {"/showSchedule.html","/schedule/*"})
 public class LoginFilter implements Filter {
 
     @Override
