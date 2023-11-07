@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 *
 *
 * */
-@WebServlet("/schedule/*")
+@WebServlet( "/schedule/*")
 public class SysScheduleController extends BaseContoller {
     protected void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("add");
